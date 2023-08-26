@@ -26,10 +26,10 @@ pieces = [
     {"id": 9, "shape": '.', "name": ".", "walk": {}}
 ]
 
-l = [[9, 0, 9, 5],
-     [4, 9, 1, 2],
-     [8, 0, 7, 6],
-     [9, 6, 9, 9]]
+l = [[1, 6, 7, 9],
+     [8, 1, 5, 1],
+     [9, 3, 1, 5],
+     [0, 0, 0, 6]]
 
 
 def pretty_board(l):
@@ -61,12 +61,12 @@ def replace_board(l, start_dir, end_dir):
 
 N = 4
 
-strongs = [[0, 0, 0, 0],
+strongs = [[0, 0, 1, 0],
+           [1, 0, 0, 0],
            [0, 0, 0, 0],
-           [1, 0, 1, 0],
            [0, 0, 0, 0]]
 
-start_dir, end_dir = dirs.right, dirs.right
+start_dir, end_dir = dirs.down, dirs.right
 l, start, end = replace_board(l, start_dir, end_dir)
 
 # Inserting obvious strong places
@@ -116,16 +116,13 @@ def move_restrictions(l, strongs, i, j):
 
 def calc_move(l):
     empties = calc_empties(l)
-    # print(empties)
     moves = []
     for place in empties:
         check = {(t, dirs.invert(d)) for d in [dirs.up, dirs.down, dirs.left, dirs.right] if
                  move_restrictions(l, strongs, *(t := dirs.calc_move(place, d)))}
-        # print(">", check)
         if check:
             for c in check:
                 moves.append(c)
-    # print(len(moves), moves)
     return moves
 
 
@@ -139,35 +136,35 @@ def do_move(l, moves):
 
         dc_l[new_i][new_j] = dc_l[i][j].copy()
         dc_l[i][j] = pieces[0].copy()
-        boards.append(dc_l)
+        boards.append((dc_l, (i, j, d)))
     return boards
 
 
 def calc_n_moves(l, n):
-    boards = [l]
+    boards = [(l, [])]
     for _ in range(n):
         print(len(boards))
         next_move_boards = []
-        # print(len(boards))
         while boards:
 
-            b = deepcopy(boards.pop())
-            for new_b in do_move(b, calc_move(b)):
-                next_move_boards.append(new_b)
+            b, mvs = deepcopy(boards.pop())
+            for new_b, d in do_move(b, calc_move(b)):
+                next_move_boards.append((new_b, mvs.copy() + [d]))
 
-        for b in next_move_boards:
-            if b not in boards:
-                boards.append(deepcopy(b))
+        for b, mvs in next_move_boards:
+            if b not in map(lambda x: x[0], boards):
+                boards.append((deepcopy(b), mvs.copy()))
 
     return boards
 
 
 print(pretty_board(l))
 print('-'*80)
-b = calc_n_moves(l, 9)
+b = calc_n_moves(l, 5)
 # for b in do_move(l, calc_move(l)):
 #     print(pretty_board(b))
-for bo in b:
+for bo, mvs in b:
     # print(pretty_board(bo))
     if auto_play(bo, start, start_dir, end, end_dir):
         print(pretty_board(bo))
+        print(mvs)
