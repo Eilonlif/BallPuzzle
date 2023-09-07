@@ -1,4 +1,5 @@
 from copy import deepcopy
+
 from tqdm import tqdm
 
 from board import Board
@@ -13,23 +14,19 @@ class Solver:
 
     @staticmethod
     def auto_play(board):
-        i, j = board.start
-
-        walk_dir = board[i][j]["walk"][board.start_dir]
-        new_i, new_j = i + walk_dir[0], j + walk_dir[1]
-        while (new_i, new_j) != board.end:
-            if not Board.check_inside_borders(new_i, new_j):
+        walk_dir = board[board.start]["walk"][board.start_dir]
+        new_cord = Directions.add_direction_to_coordinate(board.start, walk_dir)
+        while new_cord != board.end:
+            if not Board.check_inside_borders(*new_cord):
                 return False
-            if walk_dir not in board[new_i][new_j]["walk"]:
+            if walk_dir not in board[new_cord]["walk"]:
                 return False
-            walk_dir = board[new_i][new_j]["walk"][walk_dir]
-            new_i, new_j = new_i + walk_dir[0], new_j + walk_dir[1]
-
+            walk_dir = board[new_cord]["walk"][walk_dir]
+            new_cord = Directions.add_direction_to_coordinate(new_cord, walk_dir)
         return walk_dir == Directions.invert(board.end_dir)
 
     @staticmethod
     def calc_empties(board):
-
         empties = set()
         for i, row in enumerate(board.board):
             for j, ele in enumerate(row):
@@ -38,10 +35,10 @@ class Solver:
         return empties
 
     @staticmethod
-    def move_restrictions(board, strongs, i, j):
+    def move_restrictions(board, strong, i, j):
         if not Board.check_inside_borders(i, j):
             return False
-        return (not strongs[i][j]) and board[i][j]["id"] > 0
+        return board[i][j]["id"] > 0 and not strong[i][j]
 
     @staticmethod
     def calc_move(board):
@@ -49,8 +46,8 @@ class Solver:
         moves = []
         for place in empties:
             check = {(t, Directions.invert(d)) for d in
-                     [Directions.up, Directions.down, Directions.left, Directions.right] if
-                     Solver.move_restrictions(board, board.strongs,
+                     Directions.all_directions if
+                     Solver.move_restrictions(board, board.strong,
                                               *(t := Directions.add_direction_to_coordinate(place, d)))}
             if check:
                 for c in check:
